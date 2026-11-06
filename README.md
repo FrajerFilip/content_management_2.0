@@ -1,12 +1,13 @@
 # Frame – generátor animací
 
-Textové zadání → backend (Express) → Anthropic API → HTML/CSS/JS animace vyrenderovaná v izolovaném `<iframe>`.
+Textové zadání → backend (Express) → lokální model v Ollama (nebo Anthropic API) → HTML/CSS/JS animace vyrenderovaná v izolovaném `<iframe>`.
 
 ## Spuštění
 
 ```bash
 npm install
-cp .env.example .env   # doplň ANTHROPIC_API_KEY
+ollama pull qwen2.5-coder:14b
+cp .env.example .env
 npm start              # http://localhost:3000
 ```
 
@@ -24,12 +25,16 @@ vrací `{ "html": "...", "model": "...", "truncated": false }`.
 
 ## Bezpečnost
 
-- API klíč je jen na serveru (`.env`), prohlížeč ho nikdy nedostane.
+- U Anthropic je API klíč jen na serveru (`.env`), prohlížeč ho nikdy nedostane.
 - Vygenerovaný kód běží v `iframe` se `sandbox="allow-scripts"` (bez `allow-same-origin`),
   takže má vlastní origin a nemá přístup k rodičovské stránce, cookies ani úložišti.
 - Do dokumentu se vkládá CSP `default-src 'none'`, která blokuje síťové požadavky.
 
 ## Model
 
-Výchozí model je `claude-sonnet-5-5`, změníš ho proměnnou `ANTHROPIC_MODEL`.
-Požadavek má zapnutý server-side fallback při odmítnutí (`fallbacks: "default"`).
+Přepínač `LLM_PROVIDER` v `.env`:
+
+- `ollama` (výchozí) volá `OLLAMA_URL/api/chat` s modelem `OLLAMA_MODEL`.
+  Na generování kódu se hodí modely zaměřené na kód, např. `qwen2.5-coder:14b`.
+  Malé modely (do ~8B) často vracejí nefunkční HTML.
+- `anthropic` používá `ANTHROPIC_MODEL` (výchozí `claude-sonnet-5-5`) a vyžaduje `ANTHROPIC_API_KEY`.
